@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; height:100%; }
+    body{
+      background:#0a0406;
+      background-image:radial-gradient(120% 80% at 50% -10%, #2e1216 0%, #14070a 45%, #07040a 100%);
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Rajdhani',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    }
+    @keyframes igTagPulse{ 0%,100%{ opacity:.6; letter-spacing:.5em; } 50%{ opacity:1; letter-spacing:.56em; } }
+    @keyframes igTitleFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+    @keyframes igBtnGlow{ 0%,100%{ box-shadow:0 0 32px -6px rgba(237,28,36,.7), inset 0 1px 0 rgba(255,255,255,.45); } 50%{ box-shadow:0 0 48px 0px rgba(237,28,36,.95), inset 0 1px 0 rgba(255,255,255,.45); } }
+    @keyframes igChevron{ 0%,100%{ opacity:.3; transform:translateY(0); } 50%{ opacity:.9; transform:translateY(5px); } }
+  </style>
+</helmet>
+
+<div style="position:relative; width:min(440px,96vw); height:min(900px,95vh); border-radius:36px; overflow:hidden; background:#04050b; box-shadow:0 0 0 1px rgba(237,28,36,.22), 0 30px 80px -20px rgba(0,0,0,.9), 0 0 120px -40px rgba(237,28,36,.42); border:1px solid rgba(237,80,90,.14);">
+
+  <canvas ref="{{ canvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; display:block;"></canvas>
+
+  <!-- vignette -->
+  <div style="position:absolute; inset:0; pointer-events:none; background:radial-gradient(130% 100% at 50% 42%, transparent 50%, rgba(5,3,7,.78) 100%);"></div>
+
+  <!-- title block -->
+  <div ref="{{ titleRef }}" style="position:absolute; top:0; left:0; right:0; padding:40px 36px 0; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none; z-index:5;">
+    <div style="font-family:'Rajdhani'; font-size:13px; color:rgba(255,120,130,.9); font-weight:700; animation:igTagPulse 3.4s ease-in-out infinite;">DEEP SPACE SURVIVAL</div>
+    <div style="margin-top:18px; font-family:'Orbitron'; font-size:54px; font-weight:900; color:#fff; line-height:1.02; letter-spacing:.02em; animation:igTitleFloat 5s ease-in-out infinite;"><span style="color:#ED1C24;">아이지</span><br>플라이트</div>
+    <div style="margin-top:20px; width:148px; height:1px; background:linear-gradient(90deg, transparent, rgba(255,90,100,.7), transparent);"></div>
+    <div style="margin-top:14px; font-size:14.5px; line-height:1.5; color:rgba(255,180,150,.92); font-weight:700; letter-spacing:.04em; word-break:keep-all;">아이지 창립 17주년 기념 공식 게임</div>
+  </div>
+
+  <!-- bottom: record + start -->
+  <div ref="{{ bottomRef }}" style="position:absolute; bottom:0; left:0; right:0; padding:0 36px 48px; display:flex; flex-direction:column; align-items:center; z-index:6;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:3px; margin-bottom:26px; pointer-events:none;">
+      <div style="font-family:'Rajdhani'; font-size:11px; letter-spacing:.42em; color:rgba(255,110,120,.65); font-weight:600;">BEST RECORD</div>
+      <div style="font-family:'Orbitron'; font-size:30px; font-weight:700; color:#fff; line-height:1; text-shadow:0 0 18px rgba(255,70,80,.55);">{{ bestStr }}<span style="font-size:16px; color:rgba(255,150,155,.8); margin-left:2px;">s</span></div>
+    </div>
+    <a href="{{ gameHref }}" style="text-decoration:none; padding:18px 64px; border-radius:18px; background:linear-gradient(180deg,#ff5a64,#d4101a); color:#fff; font-family:'Orbitron'; font-weight:700; font-size:19px; letter-spacing:.12em; cursor:pointer; animation:igBtnGlow 2.6s ease-in-out infinite;">START</a>
+    <button onClick="{{ openHelp }}" style="margin-top:16px; padding:12px 30px; border:1px solid rgba(255,120,130,.4); border-radius:14px; background:rgba(28,12,14,.5); color:rgba(255,200,205,.95); font-family:'Rajdhani'; font-weight:700; font-size:14px; letter-spacing:.14em; cursor:pointer;">게임 방법</button>
+  </div>
+
+  <!-- How-to-play modal -->
+  <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeHelp }}" style="position:absolute; inset:0; z-index:14; display:flex; align-items:center; justify-content:center; padding:30px; background:rgba(4,5,12,.82); backdrop-filter:blur(4px);">
+      <div onClick="{{ stop }}" style="position:relative; width:100%; max-width:340px; padding:26px 24px 24px; border-radius:22px; background:linear-gradient(180deg, rgba(24,16,22,.96), rgba(12,8,14,.97)); border:1px solid rgba(255,110,120,.28); box-shadow:0 24px 60px -16px rgba(0,0,0,.8), 0 0 60px -20px rgba(237,28,36,.5);">
+        <div style="font-family:'Rajdhani'; font-size:11px; letter-spacing:.42em; color:rgba(255,150,160,.8); font-weight:600; text-align:center;">HOW TO PLAY</div>
+        <div style="margin-top:4px; font-family:'Orbitron'; font-size:21px; font-weight:700; color:#fff; text-align:center; letter-spacing:.02em;">게임 방법</div>
+        <div style="margin-top:20px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; gap:13px; align-items:flex-start;">
+            <div style="flex:none; width:34px; height:34px; border-radius:10px; background:rgba(255,90,100,.14); border:1px solid rgba(255,90,100,.3); display:flex; align-items:center; justify-content:center; font-size:18px;">🕹️</div>
+            <div style="font-size:14px; line-height:1.5; color:rgba(230,225,235,.92); word-break:keep-all; text-wrap:pretty; font-weight:500;">하단 <b style="color:#ff9aa2;">◀ ▶ 키패드</b>로 비행기를 좌우로 움직여 운석을 피하세요.</div>
+          </div>
+          <div style="display:flex; gap:13px; align-items:flex-start;">
+            <div style="flex:none; width:34px; height:34px; border-radius:10px; background:rgba(255,90,100,.14); border:1px solid rgba(255,90,100,.3); display:flex; align-items:center; justify-content:center; font-size:18px;">☄️</div>
+            <div style="font-size:14px; line-height:1.5; color:rgba(230,225,235,.92); word-break:keep-all; text-wrap:pretty; font-weight:500;">시간이 갈수록 운석은 <b style="color:#ff9aa2;">더 빨라지고 많아집니다.</b> 오래 버틸수록 높은 기록!</div>
+          </div>
+          <div style="display:flex; gap:13px; align-items:flex-start;">
+            <div style="flex:none; width:34px; height:34px; border-radius:10px; background:rgba(255,90,100,.14); border:1px solid rgba(255,90,100,.3); display:flex; align-items:center; justify-content:center; font-size:18px;">❓</div>
+            <div style="font-size:14px; line-height:1.5; color:rgba(230,225,235,.92); word-break:keep-all; text-wrap:pretty; font-weight:500;">10초마다 <b style="color:#ff9aa2;">아이지 O/X 퀴즈</b>가 출제됩니다. 문장이 <b style="color:#4d9dff;">맞으면 O(왼쪽)</b>, <b style="color:#ff5a64;">틀리면 X(오른쪽)</b> 구역으로 5초 안에 이동!</div>
+          </div>
+          <div style="display:flex; gap:13px; align-items:flex-start;">
+            <div style="flex:none; width:34px; height:34px; border-radius:10px; background:rgba(255,90,100,.14); border:1px solid rgba(255,90,100,.3); display:flex; align-items:center; justify-content:center; font-size:18px;">⚡</div>
+            <div style="font-size:14px; line-height:1.5; color:rgba(230,225,235,.92); word-break:keep-all; text-wrap:pretty; font-weight:500;">시간이 끝나면 <b style="color:#ff5a64;">틀린 구역에 거대 레이저</b>가 발사됩니다. 잘못된 쪽에 있으면 즉사!</div>
+          </div>
+        </div>
+        <button onClick="{{ closeHelp }}" style="margin-top:24px; width:100%; padding:13px; border:none; border-radius:14px; background:linear-gradient(180deg,#ff5a64,#d4101a); color:#fff; font-family:'Orbitron'; font-weight:700; font-size:14px; letter-spacing:.1em; cursor:pointer; box-shadow:0 0 28px -8px rgba(237,28,36,.8);">확인</button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { bestStr:'0.0', showHelp:false };
+
+  constructor(props){
+    super(props);
+    this.canvasRef = React.createRef();
+    this.titleRef = React.createRef();
+    this.bottomRef = React.createRef();
+  }
+
+  componentDidMount(){
+    let best = 0;
+    try{ best = parseFloat(localStorage.getItem('igflight_best')||'0')||0; }catch(e){}
+    this.setState({ bestStr: best.toFixed(1) });
+
+    this.logo = new Image();
+    this.logo.onload = () => { this.logoReady = true; };
+    this.logo.src = 'assets/idg-logo.png';
+
+    this.canvas = this.canvasRef.current;
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    this._onResize = () => this.resize();
+    window.addEventListener('resize', this._onResize);
+
+    this.stars = [];
+    const layers = [ {n:40,r:[.5,1],s:.10,a:.4}, {n:26,r:[1,1.7],s:.26,a:.7}, {n:14,r:[1.6,2.7],s:.5,a:1} ];
+    for(const L of layers){
+      for(let i=0;i<L.n;i++) this.stars.push({ x:Math.random(), y:Math.random(), r:L.r[0]+Math.random()*(L.r[1]-L.r[0]), s:L.s*(.7+Math.random()*.6), a:L.a*(.5+Math.random()*.5) });
+    }
+    this.meteors = [];
+    this.metTimer = 600;
+    this.t0 = performance.now();
+    this.last = this.t0;
+    this.raf = requestAnimationFrame(this.loop);
+  }
+
+  componentWillUnmount(){
+    cancelAnimationFrame(this.raf);
+    window.removeEventListener('resize', this._onResize);
+  }
+
+  openHelp = () => { this.setState({ showHelp:true }); };
+  closeHelp = () => { this.setState({ showHelp:false }); };
+  stop = (e) => { e.stopPropagation(); };
+
+  resize(){
+    const r = this.canvas.getBoundingClientRect();
+    this.W = r.width; this.H = r.height;
+    const dpr = Math.min(window.devicePixelRatio||1, 2.5);
+    this.canvas.width = Math.round(this.W*dpr);
+    this.canvas.height = Math.round(this.H*dpr);
+    this.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  loop = (t) => {
+    this.raf = requestAnimationFrame(this.loop);
+    let dt = t - this.last; this.last = t;
+    if(dt>50) dt=50;
+    this.update(dt);
+    this.draw(t - this.t0);
+  };
+
+  update(dt){
+    for(const st of this.stars){
+      st.y += st.s*dt/1000;
+      if(st.y>1.02){ st.y=-0.02; st.x=Math.random(); }
+    }
+    this.metTimer -= dt;
+    if(this.metTimer<=0){
+      this.metTimer = 1400 + Math.random()*1800;
+      const r = 9 + Math.random()*13;
+      this.meteors.push({ x:Math.random()*this.W, y:-r-10, r, vy:0.045+Math.random()*0.03, vx:(Math.random()-0.5)*0.02, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.003, seed:Math.random()*1000 });
+    }
+    for(const m of this.meteors){ m.y += m.vy*dt; m.x += m.vx*dt; m.rot += m.vr*dt; }
+    this.meteors = this.meteors.filter(m => m.y < this.H + m.r + 30);
+  }
+
+  draw(elapsed){
+    const ctx=this.ctx, W=this.W, H=this.H;
+    if(!ctx) return;
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#1a0a10'); g.addColorStop(.5,'#0c0510'); g.addColorStop(1,'#06030a');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    const neb = ctx.createRadialGradient(W*0.3,H*0.35,0, W*0.3,H*0.35, W*1.0);
+    neb.addColorStop(0,'rgba(160,40,55,.2)'); neb.addColorStop(1,'rgba(160,40,55,0)');
+    ctx.fillStyle=neb; ctx.fillRect(0,0,W,H);
+    const neb2 = ctx.createRadialGradient(W*0.78,H*0.7,0, W*0.78,H*0.7, W*0.85);
+    neb2.addColorStop(0,'rgba(90,40,120,.14)'); neb2.addColorStop(1,'rgba(90,40,120,0)');
+    ctx.fillStyle=neb2; ctx.fillRect(0,0,W,H);
+
+    for(const st of this.stars){
+      ctx.globalAlpha = st.a * (0.7 + 0.3*Math.sin(elapsed*0.002 + st.x*30));
+      ctx.fillStyle='#ffe6e8';
+      ctx.beginPath(); ctx.arc(st.x*W, st.y*H, st.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+
+    for(const m of this.meteors) this.drawMeteor(m);
+
+    // adaptive ship band: sit clear between the title block and the bottom cluster
+    let bandTop = H*0.30, bandBottom = H*0.74;
+    const cRect = this.canvas.getBoundingClientRect();
+    if(this.titleRef.current && this.bottomRef.current){
+      bandTop = this.titleRef.current.getBoundingClientRect().bottom - cRect.top + 10;
+      bandBottom = this.bottomRef.current.getBoundingClientRect().top - cRect.top - 6;
+    }
+    const bandH = Math.max(60, bandBottom - bandTop);
+    const centerY = (bandTop + bandBottom)/2;
+    const scale = Math.max(1.7, Math.min(2.9, bandH/82));
+    this.drawShip(W/2, centerY - scale*7 + Math.sin(elapsed*0.0013)*7, elapsed, scale);
+  }
+
+  drawMeteor(m){
+    const ctx=this.ctx;
+    ctx.save(); ctx.translate(m.x,m.y);
+    const tg = ctx.createLinearGradient(0,-m.r*3,0,0);
+    tg.addColorStop(0,'rgba(255,140,90,0)'); tg.addColorStop(1,'rgba(255,140,90,.22)');
+    ctx.fillStyle=tg; ctx.beginPath(); ctx.moveTo(-m.r*0.5,0); ctx.lineTo(0,-m.r*3); ctx.lineTo(m.r*0.5,0); ctx.closePath(); ctx.fill();
+    ctx.rotate(m.rot);
+    const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
+    bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
+    ctx.fillStyle=bg; ctx.beginPath();
+    for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(30,25,22,.5)';
+    for(let i=0;i<3;i++){ const a=m.seed+i*2.1; ctx.beginPath(); ctx.arc(Math.cos(a)*m.r*0.4, Math.sin(a)*m.r*0.4, m.r*0.18,0,Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  drawShip(x,y,elapsed,scale){
+    const ctx=this.ctx;
+    const s = scale || 2.9;
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.rotate(Math.sin(elapsed*0.0011)*0.06);
+    this.paintShip(ctx, elapsed);
+    ctx.restore();
+  }
+
+  // simple ship with a glossy cockpit — origin at center, nose toward -y
+  paintShip(ctx, t){
+    const flick = Math.sin(t*0.033), flick2 = Math.sin(t*0.051+1.1);
+    for(const ex of [-5.2, 5.2]){
+      const fl = 12 + (ex<0?flick:flick2)*3 + Math.random()*3;
+      const fg = ctx.createLinearGradient(ex,8,ex,8+fl+11);
+      fg.addColorStop(0,'rgba(255,255,255,.95)');
+      fg.addColorStop(.32,'rgba(120,200,255,.9)');
+      fg.addColorStop(.7,'rgba(255,120,90,.7)');
+      fg.addColorStop(1,'rgba(255,50,60,0)');
+      ctx.save(); ctx.shadowColor='rgba(120,180,255,.85)'; ctx.shadowBlur=13;
+      ctx.fillStyle=fg;
+      ctx.beginPath(); ctx.moveTo(ex-2.4,8); ctx.lineTo(ex,8+fl+11); ctx.lineTo(ex+2.4,8); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    const wingG = ctx.createLinearGradient(0,-4,0,12);
+    wingG.addColorStop(0,'#f3f7ff'); wingG.addColorStop(1,'#a9b8d6');
+    for(const sx of [-1,1]){
+      ctx.save(); ctx.shadowColor='rgba(40,70,130,.45)'; ctx.shadowBlur=5; ctx.shadowOffsetY=2;
+      ctx.fillStyle=wingG;
+      ctx.beginPath();
+      ctx.moveTo(sx*3.4,-5);
+      ctx.lineTo(sx*20,9);
+      ctx.lineTo(sx*15.5,11.5);
+      ctx.lineTo(sx*4,7);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.save(); ctx.shadowColor='rgba(255,40,55,.95)'; ctx.shadowBlur=7;
+      ctx.strokeStyle='#ff2a36'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(sx*3.4,-5); ctx.lineTo(sx*20,9); ctx.stroke();
+      ctx.restore();
+      ctx.save(); ctx.shadowColor='#ff5a64'; ctx.shadowBlur=9;
+      ctx.fillStyle='#ffe2e4'; ctx.beginPath(); ctx.arc(sx*20,9,1.4,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle='#d3deef';
+    for(const sx of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(sx*3,-13); ctx.lineTo(sx*9,-6); ctx.lineTo(sx*3.4,-7);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.save(); ctx.shadowColor='rgba(150,190,255,.6)'; ctx.shadowBlur=15;
+    const bodyG = ctx.createLinearGradient(-7,0,7,0);
+    bodyG.addColorStop(0,'#c4d2ec'); bodyG.addColorStop(.5,'#ffffff'); bodyG.addColorStop(1,'#c4d2ec');
+    ctx.fillStyle=bodyG;
+    ctx.beginPath();
+    ctx.moveTo(0,-24);
+    ctx.quadraticCurveTo(7,-6, 6.2,9);
+    ctx.lineTo(3.4,12); ctx.lineTo(-3.4,12);
+    ctx.quadraticCurveTo(-7,-6, 0,-24);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle='rgba(212,16,26,.7)'; ctx.lineWidth=1.1; ctx.lineCap='round';
+    for(const sx of [-1,1]){ ctx.beginPath(); ctx.moveTo(sx*1.7,-16); ctx.lineTo(sx*2.2,8); ctx.stroke(); }
+    ctx.fillStyle='#dde6f5';
+    ctx.beginPath(); ctx.ellipse(0,-10,3.7,6.4,0,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.shadowColor='rgba(90,170,255,.85)'; ctx.shadowBlur=9;
+    const cg = ctx.createLinearGradient(0,-16,0,-3);
+    cg.addColorStop(0,'#d6f0ff'); cg.addColorStop(.45,'#46a6ff'); cg.addColorStop(1,'#0a3e8f');
+    ctx.fillStyle=cg;
+    ctx.beginPath(); ctx.ellipse(0,-10,2.7,5.4,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.beginPath(); ctx.ellipse(-1,-11.8,0.9,2.3,-0.25,0,Math.PI*2); ctx.fill();
+    if(this.logoReady) this.drawBadge(ctx);
+  }
+
+  drawBadge(ctx){
+    const bw=10.8, bh=7.4, by=4.4, r=2;
+    const rr=(x,y,w,h,rad)=>{ if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x,y,w,h,rad); } else { ctx.beginPath(); ctx.rect(x,y,w,h); } };
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
+    const pg=ctx.createLinearGradient(0,by-bh/2,0,by+bh/2);
+    pg.addColorStop(0,'#ffffff'); pg.addColorStop(1,'#e7edf6');
+    ctx.fillStyle=pg; rr(-bw/2,by-bh/2,bw,bh,r); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle='rgba(40,60,100,.45)'; ctx.lineWidth=0.6; rr(-bw/2,by-bh/2,bw,bh,r); ctx.stroke();
+    const lw=8.8, lh=lw*596/843; ctx.drawImage(this.logo, -lw/2, by-lh/2, lw, lh);
+  }
+
+  renderVals(){
+    return { canvasRef:this.canvasRef, titleRef:this.titleRef, bottomRef:this.bottomRef, bestStr:this.state.bestStr, gameHref:'아이지 플라이트.dc.html?go=1', showHelp:this.state.showHelp, openHelp:this.openHelp, closeHelp:this.closeHelp, stop:this.stop };
+  }
+}
+</script>
+</body>
+</html>
