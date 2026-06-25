@@ -163,6 +163,14 @@ class Component extends DCLogic {
     this.logo = new Image();
     this.logo.onload = () => { this.logoReady = true; };
     this.logo.src = 'assets/idg-logo.png';
+    this.meteorImg = new Image();
+    this.meteorImg.onload = () => { this.meteorReady = true; };
+    this.meteorImg.src = 'assets/meteor.png';
+    this.shipImg = new Image();
+    this.shipImg.onload = () => { this.shipReady = true; };
+    this.shipImg.src = 'assets/ship.png';
+    // ship art: rock fills 80.2% width / 92.3% height of the square frame, nose up
+    this.SHIP_WFRAC = 0.802;
     this.canvas = this.canvasRef.current;
     this.ctx = this.canvas.getContext('2d');
     this.resize();
@@ -329,10 +337,13 @@ class Component extends DCLogic {
     let dir = (this.keys.right?1:0) - (this.keys.left?1:0);
     this.ship.x += dir*sp*dt;
     this.ship.x = Math.max(18, Math.min(this.W-18, this.ship.x));
+    // ease banking lean toward movement direction
+    const leanTarget = dir*0.34;
+    this.ship.lean = (this.ship.lean||0) + (leanTarget - (this.ship.lean||0))*Math.min(1, dt*0.012);
 
     // difficulty
     const ts = this.elapsed/1000;
-    const interval = 760;                 // constant spawn rate — meteor count stays steady
+    const interval = 507;                 // constant spawn rate (~1.5x more meteors than 760)
     const baseSpeed = 0.155 + ts*0.0026;  // difficulty rises through fall speed only
     const burst = 1;                      // never spawn multiple meteors at once
 
@@ -534,31 +545,67 @@ class Component extends DCLogic {
     const ctx=this.ctx;
     ctx.save();
     ctx.translate(m.x,m.y);
-    // trail
+    // fiery trail
     const tg = ctx.createLinearGradient(0,-m.r*3.2,0,0);
     tg.addColorStop(0,'rgba(255,150,90,0)'); tg.addColorStop(1,'rgba(255,150,90,.28)');
     ctx.fillStyle=tg;
     ctx.beginPath(); ctx.moveTo(-m.r*0.55,0); ctx.lineTo(0,-m.r*3.2); ctx.lineTo(m.r*0.55,0); ctx.closePath(); ctx.fill();
     ctx.rotate(m.rot);
-    // body
-    const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
-    bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
-    ctx.fillStyle=bg;
-    ctx.beginPath();
-    const pts=9;
-    for(let i=0;i<pts;i++){ const a=i/pts*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
-    ctx.closePath(); ctx.fill();
-    // craters
-    ctx.fillStyle='rgba(30,25,22,.5)';
-    for(let i=0;i<3;i++){ const a=m.seed+i*2.1; const cr=m.r*0.18; ctx.beginPath(); ctx.arc(Math.cos(a)*m.r*0.4, Math.sin(a)*m.r*0.4, cr,0,Math.PI*2); ctx.fill(); }
+    if(this.meteorReady){
+      // rock occupies ~66% of the image frame, centered → draw frame at ~3.03x radius
+      const d = m.r*3.03;
+      ctx.drawImage(this.meteorImg, -d/2, -d/2, d, d);
+    } else {
+      // fallback while image loads
+      const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
+      bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
+      ctx.fillStyle=bg;
+      ctx.beginPath();
+      const pts=9;
+      for(let i=0;i<pts;i++){ const a=i/pts*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+      ctx.closePath(); ctx.fill();
+    }
     ctx.restore();
   }
 
   drawShip(){
     const ctx=this.ctx, x=this.ship.x, y=this.ship.y;
+    const t=performance.now();
     ctx.save();
     ctx.translate(x,y);
-    this.paintShip(ctx, performance.now());
+    ctx.rotate(this.ship.lean||0);
+    if(this.shipReady){
+      const S = 56;                 // frame draw size → ship ~45px wide
+      this.paintThrusters(ctx, t, S);
+      ctx.drawImage(this.shipImg, -S/2, -S/2, S, S);
+    } else {
+      this.paintShip(ctx, t);       // fallback while image loads
+    }
+    ctx.restore();
+  }
+
+  // twin afterburner thrusters emitting from the tail; S = ship frame size
+  paintThrusters(ctx, t, S){
+    const flick=Math.sin(t*0.04), flick2=Math.sin(t*0.062+1.1);
+    const baseY = S*0.30;
+    for(const [ex,ph] of [[-S*0.12,flick],[S*0.12,flick2]]){
+      const fl = S*0.40 + ph*S*0.06 + Math.random()*S*0.05;
+      const w = S*0.055;
+      const g=ctx.createLinearGradient(ex,baseY,ex,baseY+fl);
+      g.addColorStop(0,'rgba(255,255,255,.95)');
+      g.addColorStop(.30,'rgba(135,205,255,.9)');
+      g.addColorStop(.70,'rgba(255,135,90,.6)');
+      g.addColorStop(1,'rgba(255,50,60,0)');
+      ctx.save(); ctx.shadowColor='rgba(120,180,255,.9)'; ctx.shadowBlur=S*0.22;
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.moveTo(ex-w,baseY); ctx.lineTo(ex,baseY+fl); ctx.lineTo(ex+w,baseY); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // central afterburner bloom
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const cg=ctx.createRadialGradient(0,baseY,0, 0,baseY,S*0.24);
+    cg.addColorStop(0,'rgba(150,200,255,.5)'); cg.addColorStop(1,'rgba(150,200,255,0)');
+    ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(0,baseY,S*0.24,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 

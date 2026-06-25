@@ -106,6 +106,12 @@ class Component extends DCLogic {
     this.logo = new Image();
     this.logo.onload = () => { this.logoReady = true; };
     this.logo.src = 'assets/idg-logo.png';
+    this.meteorImg = new Image();
+    this.meteorImg.onload = () => { this.meteorReady = true; };
+    this.meteorImg.src = 'assets/meteor.png';
+    this.shipImg = new Image();
+    this.shipImg.onload = () => { this.shipReady = true; };
+    this.shipImg.src = 'assets/ship.png';
 
     this.canvas = this.canvasRef.current;
     this.ctx = this.canvas.getContext('2d');
@@ -197,8 +203,9 @@ class Component extends DCLogic {
     }
     const bandH = Math.max(60, bandBottom - bandTop);
     const centerY = (bandTop + bandBottom)/2;
-    const scale = Math.max(1.7, Math.min(2.9, bandH/82));
-    this.drawShip(W/2, centerY - scale*7 + Math.sin(elapsed*0.0013)*7, elapsed, scale);
+    // large ship so the full detail of the craft reads clearly
+    const S = Math.min(bandH*0.98, W*0.86);
+    this.drawShip(W/2, centerY + Math.sin(elapsed*0.0013)*8, elapsed, S);
   }
 
   drawMeteor(m){
@@ -208,22 +215,56 @@ class Component extends DCLogic {
     tg.addColorStop(0,'rgba(255,140,90,0)'); tg.addColorStop(1,'rgba(255,140,90,.22)');
     ctx.fillStyle=tg; ctx.beginPath(); ctx.moveTo(-m.r*0.5,0); ctx.lineTo(0,-m.r*3); ctx.lineTo(m.r*0.5,0); ctx.closePath(); ctx.fill();
     ctx.rotate(m.rot);
-    const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
-    bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
-    ctx.fillStyle=bg; ctx.beginPath();
-    for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle='rgba(30,25,22,.5)';
-    for(let i=0;i<3;i++){ const a=m.seed+i*2.1; ctx.beginPath(); ctx.arc(Math.cos(a)*m.r*0.4, Math.sin(a)*m.r*0.4, m.r*0.18,0,Math.PI*2); ctx.fill(); }
+    if(this.meteorReady){
+      const d = m.r*3.03; // rock fills ~66% of frame, centered
+      ctx.drawImage(this.meteorImg, -d/2, -d/2, d, d);
+    } else {
+      const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
+      bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
+      ctx.fillStyle=bg; ctx.beginPath();
+      for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+      ctx.closePath(); ctx.fill();
+    }
     ctx.restore();
   }
 
-  drawShip(x,y,elapsed,scale){
+  drawShip(x,y,elapsed,S){
     const ctx=this.ctx;
-    const s = scale || 2.9;
-    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
-    ctx.rotate(Math.sin(elapsed*0.0011)*0.06);
+    ctx.save(); ctx.translate(x,y);
+    ctx.rotate(Math.sin(elapsed*0.0009)*0.05);
+    if(this.shipReady){
+      this.paintThrusters(ctx, elapsed, S);
+      ctx.drawImage(this.shipImg, -S/2, -S/2, S, S);
+      ctx.restore();
+      return;
+    }
+    const s = Math.max(1.7, Math.min(3.0, S/82));
+    ctx.scale(s,s);
     this.paintShip(ctx, elapsed);
+    ctx.restore();
+  }
+
+  // twin afterburner thrusters emitting from the tail; S = ship frame size
+  paintThrusters(ctx, t, S){
+    const flick=Math.sin(t*0.04), flick2=Math.sin(t*0.062+1.1);
+    const baseY = S*0.30;
+    for(const [ex,ph] of [[-S*0.12,flick],[S*0.12,flick2]]){
+      const fl = S*0.40 + ph*S*0.06 + Math.random()*S*0.05;
+      const w = S*0.055;
+      const g=ctx.createLinearGradient(ex,baseY,ex,baseY+fl);
+      g.addColorStop(0,'rgba(255,255,255,.95)');
+      g.addColorStop(.30,'rgba(135,205,255,.9)');
+      g.addColorStop(.70,'rgba(255,135,90,.6)');
+      g.addColorStop(1,'rgba(255,50,60,0)');
+      ctx.save(); ctx.shadowColor='rgba(120,180,255,.9)'; ctx.shadowBlur=S*0.22;
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.moveTo(ex-w,baseY); ctx.lineTo(ex,baseY+fl); ctx.lineTo(ex+w,baseY); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const cg=ctx.createRadialGradient(0,baseY,0, 0,baseY,S*0.24);
+    cg.addColorStop(0,'rgba(150,200,255,.5)'); cg.addColorStop(1,'rgba(150,200,255,0)');
+    ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(0,baseY,S*0.24,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 
