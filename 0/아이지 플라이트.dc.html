@@ -346,7 +346,7 @@ class Component extends DCLogic {
     // difficulty
     const ts = this.elapsed/1000;
     const interval = 507;                 // constant spawn rate (~1.5x more meteors than 760)
-    const baseSpeed = 0.155 + ts*0.0026;  // difficulty rises through fall speed only
+    const baseSpeed = 0.31 + ts*0.0052;   // 2x faster; difficulty rises through fall speed only
     const burst = 1;                      // never spawn multiple meteors at once
 
     const quizPhase = this.quiz && this.quiz.state==='count';
@@ -545,28 +545,66 @@ class Component extends DCLogic {
 
   drawMeteor(m){
     const ctx=this.ctx;
+    const t=performance.now();
+    const sp=Math.hypot(m.vx,m.vy)||0.001;
+    const ux=m.vx/sp, uy=m.vy/sp;
     ctx.save();
     ctx.translate(m.x,m.y);
-    // fiery trail
-    const tg = ctx.createLinearGradient(0,-m.r*3.2,0,0);
-    tg.addColorStop(0,'rgba(255,150,90,0)'); tg.addColorStop(1,'rgba(255,150,90,.28)');
-    ctx.fillStyle=tg;
-    ctx.beginPath(); ctx.moveTo(-m.r*0.55,0); ctx.lineTo(0,-m.r*3.2); ctx.lineTo(m.r*0.55,0); ctx.closePath(); ctx.fill();
+
+    // ===== blazing plume, aligned opposite to velocity (additive glow) =====
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    ctx.rotate(Math.atan2(ux,-uy));            // local +y points down the trail
+    const L=m.r*(4.4+Math.min(4,sp*2.6));
+    const fl=0.86+0.14*Math.sin(t*0.02+m.seed*7);
+    // outer red glow
+    let g=ctx.createLinearGradient(0,-m.r*0.5,0,L);
+    g.addColorStop(0,'rgba(255,110,50,.5)'); g.addColorStop(.45,'rgba(255,60,30,.26)'); g.addColorStop(1,'rgba(220,40,40,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.moveTo(-m.r*0.95,0); ctx.quadraticCurveTo(-m.r*0.4,L*0.55,0,L*fl); ctx.quadraticCurveTo(m.r*0.4,L*0.55,m.r*0.95,0); ctx.closePath(); ctx.fill();
+    // white-hot inner core
+    let g2=ctx.createLinearGradient(0,-m.r*0.3,0,L*0.66);
+    g2.addColorStop(0,'rgba(255,245,210,.95)'); g2.addColorStop(.4,'rgba(255,175,80,.7)'); g2.addColorStop(1,'rgba(255,90,40,0)');
+    ctx.fillStyle=g2;
+    ctx.beginPath(); ctx.moveTo(-m.r*0.45,0); ctx.quadraticCurveTo(0,L*0.35,0,L*0.66*fl); ctx.quadraticCurveTo(0,L*0.35,m.r*0.45,0); ctx.closePath(); ctx.fill();
+    // streaming ember sparks
+    for(let i=0;i<6;i++){
+      const ph=((t*0.0013)+i*0.31+m.seed)%1;
+      const sx=Math.sin(m.seed*5+i*2.3+t*0.012)*m.r*0.55*(0.25+ph);
+      const sy=ph*L*1.04;
+      const sr=(1-ph)*m.r*0.18+0.4;
+      ctx.globalAlpha=(1-ph)*0.85;
+      ctx.fillStyle=(i&1)?'rgba(255,215,130,1)':'rgba(255,135,60,1)';
+      ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    ctx.restore();
+
+    // ===== leading-edge heat glow on the rock =====
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    const gx=ux*m.r*0.55, gy=uy*m.r*0.55;
+    const hg=ctx.createRadialGradient(gx,gy,m.r*0.2, gx,gy,m.r*1.8);
+    hg.addColorStop(0,'rgba(255,140,60,.55)'); hg.addColorStop(.6,'rgba(255,80,40,.18)'); hg.addColorStop(1,'rgba(255,80,40,0)');
+    ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(0,0,m.r*1.8,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // ===== the rock =====
+    ctx.save();
     ctx.rotate(m.rot);
     if(this.meteorReady){
-      // rock occupies ~66% of the image frame, centered → draw frame at ~3.03x radius
-      const d = m.r*3.03;
-      ctx.drawImage(this.meteorImg, -d/2, -d/2, d, d);
+      const d=m.r*3.03;                        // rock fills ~66% of frame, centered
+      ctx.drawImage(this.meteorImg,-d/2,-d/2,d,d);
     } else {
-      // fallback while image loads
-      const bg = ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15, 0,0,m.r);
+      const bg=ctx.createRadialGradient(-m.r*0.35,-m.r*0.35,m.r*0.15,0,0,m.r);
       bg.addColorStop(0,'#9a8f86'); bg.addColorStop(.55,'#6b6058'); bg.addColorStop(1,'#37302c');
-      ctx.fillStyle=bg;
-      ctx.beginPath();
-      const pts=9;
-      for(let i=0;i<pts;i++){ const a=i/pts*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+      ctx.fillStyle=bg; ctx.beginPath();
+      for(let i=0;i<9;i++){ const a=i/9*Math.PI*2; const rr=m.r*(0.82+0.18*Math.sin(m.seed+i*2.3)); ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr); }
       ctx.closePath(); ctx.fill();
     }
+    ctx.restore();
+
     ctx.restore();
   }
 
