@@ -114,7 +114,7 @@
       <div style="margin-top:30px; font-family:'Rajdhani'; font-size:12px; letter-spacing:.4em; color:rgba(160,180,220,.7); font-weight:600;">RECORD</div>
       <div style="font-family:'Orbitron'; font-size:58px; font-weight:700; color:#fff; line-height:1; text-shadow:0 0 24px rgba(255,70,80,.55);">{{ lastStr }}</div>
       <div style="margin-top:10px; font-family:'Rajdhani'; font-size:14px; letter-spacing:.28em; color:rgba(255,110,120,.85); font-weight:600;">BEST {{ bestStr }}</div>
-      <button onClick="{{ onStart }}" style="margin-top:34px; padding:15px 44px; border:none; border-radius:16px; background:linear-gradient(180deg,#ff5a64,#d4101a); color:#fff; font-family:'Orbitron'; font-weight:700; font-size:16px; letter-spacing:.08em; cursor:pointer; box-shadow:0 0 32px -8px rgba(237,28,36,.85), inset 0 1px 0 rgba(255,255,255,.4);">RETRY</button>
+      <button onClick="{{ goHome }}" style="margin-top:34px; padding:15px 44px; border:none; border-radius:16px; background:linear-gradient(180deg,#ff5a64,#d4101a); color:#fff; font-family:'Orbitron'; font-weight:700; font-size:16px; letter-spacing:.08em; cursor:pointer; box-shadow:0 0 32px -8px rgba(237,28,36,.85), inset 0 1px 0 rgba(255,255,255,.4);">메인으로</button>
     </div>
   </sc-if>
 
@@ -302,6 +302,8 @@ class Component extends DCLogic {
     this.reset();
     this.setState({ phase:'playing', quizActive:false, showHelp:false });
   };
+
+  goHome = () => { window.location.href = '아이지 플라이트 타이틀.dc.html'; };
 
   openHelp = () => { this.initAudio(); this.setState({ showHelp:true }); };
   closeHelp = () => { this.setState({ showHelp:false }); };
@@ -708,7 +710,7 @@ class Component extends DCLogic {
       bestStr:this.state.bestStr, lastStr:this.state.lastStr, deathReason:this.state.deathReason,
       quizActive:this.state.quizActive, quizQuestion:this.state.quizQuestion,
       showStart:phase==='start', showGameover:phase==='gameover', showHelp:this.state.showHelp,
-      onStart:this.onStart, openHelp:this.openHelp, closeHelp:this.closeHelp, stop:this.stop,
+      onStart:this.onStart, goHome:this.goHome, openHelp:this.openHelp, closeHelp:this.closeHelp, stop:this.stop,
       leftDown:this.leftDown, leftUp:this.leftUp, rightDown:this.rightDown, rightUp:this.rightUp, noMenu:this.noMenu,
     };
   }
