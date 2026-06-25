@@ -392,7 +392,7 @@ class Component extends DCLogic {
 
   startQuiz(){
     const topic = this.TOPICS[Math.floor(Math.random()*this.TOPICS.length)];
-    const isTrue = Math.random() < 0.5; // 50% chance the statement is correct
+    const isTrue = Math.random() < 0.3; // 30% chance the statement shown is correct (O)
     const value = isTrue ? topic.o : topic.x[Math.floor(Math.random()*topic.x.length)];
     const text = topic.pre + value + topic.suf;
     this.quiz = { state:'count', t:5000, a:isTrue };
